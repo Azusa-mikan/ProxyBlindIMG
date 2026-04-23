@@ -4,9 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile, Response
 from fastapi.responses import FileResponse
-from redis import RedisError
 
-from src.config import cfg
 from src.taskbus import (
     Picenc,
     Picdec,
@@ -14,43 +12,20 @@ from src.taskbus import (
     images_decrypt_task,
     autoscaler,
 )
-from src.log import logger
 from src.util import FileDecryptError
-from src.cache import MemoryCache, RedisCache
-
-cache: RedisCache | MemoryCache = MemoryCache()
+from src.cache import cache_interface, close_cache
+from src.cache.rate_token import check_and_consume_token_quota
 
 @asynccontextmanager
 async def custom_lifespan(app: FastAPI):
-    global cache
-    warn_msg = "Redis Connect Failed, Fallback to Memory"
     t = asyncio.create_task(autoscaler())
-    try:
-        if cfg.use_redis > 0:
-            cache = RedisCache()
-            if await cache.ping():
-                logger.info("Redis Connected")
-            else:
-                await cache.close()
-                cache = MemoryCache()
-                logger.warning(warn_msg)
-        else:
-            cache = MemoryCache()
-    except RedisError:
-        if isinstance(cache, RedisCache):
-            await cache.close()
-        cache = MemoryCache()
-        logger.warning(warn_msg)
+    app.state.cache = await cache_interface()
     try:
         yield
     finally:
         t.cancel()
         await t
-        if isinstance(cache, RedisCache):
-            await cache.close()
-            logger.info("Redis Disconnected")
-        else:
-            cache.save()
+        await close_cache(app.state.cache)
 
 
 app = FastAPI(lifespan=custom_lifespan)
@@ -60,6 +35,20 @@ index_html = Path(__file__).parent / "resources" / "index.html"
 @app.get("/")
 async def index() -> FileResponse:
     return FileResponse(index_html)
+
+@app.get("/token")
+async def get_token(
+    token: str = Header(..., alias="X-PBIMG-Token")
+    ):
+    """获取一次性Token用于图片上传和获取"""
+    ok, retry_after = await check_and_consume_token_quota(token)
+    if not ok:
+        raise HTTPException(
+            status_code=429,
+            detail=f"请求过于频繁，请 {retry_after}s 后再试",
+        )
+
+    
 
 @app.post("/upload")
 async def upload_image(
