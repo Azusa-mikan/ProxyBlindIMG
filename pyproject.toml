@@ -3,10 +3,11 @@ name = "proxyblindimg"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 dependencies = [
+    "apscheduler>=3.11.2",
     "cryptography>=46.0.7",
-    "fastapi>=0.136.0",
+    "fastapi[standard]>=0.136.0",
     "orjson>=3.11.8",
     "python-dotenv>=1.2.2",
     "python-multipart>=0.0.26",

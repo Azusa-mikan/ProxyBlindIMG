@@ -12,34 +12,34 @@ CLEANUP_INTERVAL_SECONDS = 30
 
 
 @dataclass(slots=True)
-class TokenRateState:
+class IPRateState:
     burst_used: int = 0
     last_at: float = 0.0
 
 
-Rate_Map: dict[str, TokenRateState] = {}
-Rate_lock = asyncio.Lock()
-Next_cleanup_at: float = 0.0
+ip_rate_map: dict[str, IPRateState] = {}
+ip_rate_lock = asyncio.Lock()
+next_cleanup_at: float = 0.0
 
 
-async def check_and_consume_token_quota(token: str) -> tuple[bool, int]:
-    global Next_cleanup_at
+async def check_and_consume_ip_quota(client_ip: str) -> tuple[bool, int]:
+    global next_cleanup_at
     now = time.monotonic()
-    async with Rate_lock:
+    async with ip_rate_lock:
         # 按间隔执行全表清理
-        if now >= Next_cleanup_at:
+        if now >= next_cleanup_at:
             to_delete = [
-                k for k, v in Rate_Map.items()
+                k for k, v in ip_rate_map.items()
                 if v.last_at > 0 and (now - v.last_at) >= IDLE_RESET_SECONDS
             ]
             for k in to_delete:
-                Rate_Map.pop(k, None)
-            Next_cleanup_at = now + CLEANUP_INTERVAL_SECONDS
+                ip_rate_map.pop(k, None)
+            next_cleanup_at = now + CLEANUP_INTERVAL_SECONDS
 
-        state = Rate_Map.get(token)
+        state = ip_rate_map.get(client_ip)
         if state is None:
-            state = TokenRateState()
-            Rate_Map[token] = state
+            state = IPRateState()
+            ip_rate_map[client_ip] = state
 
         if state.last_at > 0 and (now - state.last_at) >= IDLE_RESET_SECONDS:
             state.burst_used = 0

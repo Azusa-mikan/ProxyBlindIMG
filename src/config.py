@@ -15,6 +15,8 @@ class Config:
     redis_host: str
     redis_port: int
     redis_db: int
+    use_custom_index: int
+    index_title: str
 
 
 load_dotenv()
@@ -30,4 +32,6 @@ cfg = Config(
     redis_host=os.getenv("redis_host") or "127.0.0.1",
     redis_port=int(os.getenv("redis_port") or 6379),
     redis_db=int(os.getenv("redis_db") or 0),
+    use_custom_index=int(os.getenv("use_custom_index") or 0),
+    index_title=(os.getenv("index_title") or "You've reached the end of the internet.")
 )

@@ -48,6 +48,17 @@
 				font-weight: 400;
 			}
 
+			.sub-title {
+				margin-top: 0.9rem;
+				font-family: "Quicksand", "Nunito", sans-serif;
+				font-size: clamp(0.85rem, 2.1vw, 1.05rem);
+				font-weight: 500;
+				letter-spacing: 0.06em;
+				color: rgba(184, 197, 214, 0.9);
+				text-shadow: 0 0 12px rgba(184, 197, 214, 0.2);
+				user-select: none;
+			}
+
 			.glow-char {
 				display: inline-block;
 				will-change: transform, filter, text-shadow;
@@ -82,6 +93,25 @@
 				text-shadow: 0 0 10px rgba(255, 214, 224, 0.75);
 				transform: translate(-50%, -50%);
 				animation: trail-fade 680ms ease-out forwards;
+			}
+
+			.footer-link {
+				position: fixed;
+				left: 50%;
+				bottom: 1.2rem;
+				transform: translateX(-50%);
+				z-index: 2;
+				font-family: "Quicksand", "Nunito", sans-serif;
+				font-size: 0.9rem;
+				color: rgba(184, 197, 214, 0.88);
+				text-decoration: none;
+				letter-spacing: 0.04em;
+				transition: color 160ms ease, text-shadow 160ms ease;
+			}
+
+			.footer-link:hover {
+				color: #ffd6e0;
+				text-shadow: 0 0 10px rgba(255, 214, 224, 0.45);
 			}
 
 			@keyframes twinkle {
@@ -122,7 +152,15 @@
 			<div class="art-text">
 				Copyright © <span class="year" id="year"></span> Azusa-Mikan
 			</div>
+			<div class="sub-title">当前图片数: {{ image_count }} | 今日请求数: {{ today_requests }}</div>
 		</div>
+		<a
+			class="footer-link"
+			href="https://github.com/Azusa-mikan/ProxyBlindIMG"
+			target="_blank"
+			rel="noopener noreferrer"
+			>关于项目</a
+		>
 
 		<script>
 			document.getElementById("year").textContent = new Date().getFullYear();
